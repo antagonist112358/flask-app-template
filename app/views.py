@@ -9,37 +9,49 @@ from flask.ext.login import login_user, logout_user, current_user, login_require
 from app import app, lm
 from forms import ExampleForm, LoginForm
 from models import User
+from api_auth import require_api_key
+
 
 @app.route('/')
 def index():
-	return render_template('index.html')
+    return render_template('index.html')
 
 
 @app.route('/list/')
 def posts():
-	return render_template('list.html')
+    return render_template('list.html')
+
 
 @app.route('/new/')
 @login_required
 def new():
-	form = ExampleForm()
-	return render_template('new.html', form=form)
+    form = ExampleForm()
+    return render_template('new.html', form=form)
 
-@app.route('/save/', methods = ['GET','POST'])
+
+@app.route('/api/v1.0/', methods=['GET', 'POST'])
+@require_api_key
+def api_example():
+    return 'Hello Authenticated API!'
+
+
+@app.route('/save/', methods=['GET', 'POST'])
 @login_required
 def save():
-	form = ExampleForm()
-	if form.validate_on_submit():
-		print "salvando os dados:"
-		print form.title.data
-		print form.content.data
-		print form.date.data
-		flash('Dados salvos!')
-	return render_template('new.html', form=form)
+    form = ExampleForm()
+    if form.validate_on_submit():
+        print "salvando os dados:"
+        print form.title.data
+        print form.content.data
+        print form.date.data
+        flash('Dados salvos!')
+    return render_template('new.html', form=form)
+
 
 @app.route('/view/<id>/')
 def view(id):
-	return render_template('view.html')
+    return render_template('view.html')
+
 
 # === User login methods ===
 
@@ -47,11 +59,13 @@ def view(id):
 def before_request():
     g.user = current_user
 
+
 @lm.user_loader
 def load_user(id):
     return User.query.get(int(id))
 
-@app.route('/login/', methods = ['GET', 'POST'])
+
+@app.route('/login/', methods=['GET', 'POST'])
 def login():
     if g.user is not None and g.user.is_authenticated():
         return redirect(url_for('index'))
@@ -59,9 +73,10 @@ def login():
     if form.validate_on_submit():
         login_user(g.user)
 
-    return render_template('login.html', 
-        title = 'Sign In',
-        form = form)
+    return render_template('login.html',
+                           title='Sign In',
+                           form=form)
+
 
 @app.route('/logout/')
 def logout():
